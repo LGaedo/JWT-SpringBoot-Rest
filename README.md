@@ -69,7 +69,7 @@ response ejemplo:
 aca pegamos el token anterior o desde la base de datos.
 curl -X GET -H "Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3MDA3OTM0NDMsImlhdCI6MTcwMDcwNzA0M30.ycwcbHJjHPnhLDnUOEhnP6EtQuIYR6dEfg20SEZfrbjbJj2joxvyCqUm2spsjbgg0mAMRUM2TMnM_44e1-de-Q" http://localhost:8080/login
 
-# El ideal es usaar Postman, porque por ejemplo probe el endpoint y tenia problemas con las comillas al usar curl, en cambio en postman no pasa ese problema
+# El ideal es usar Postman, porque por ejemplo probe el endpoint y tenia problemas con las comillas al usar curl, en cambio en postman no pasa ese problema
 
 # Test
 le agregue jacoco para ver la cobertura como extra
