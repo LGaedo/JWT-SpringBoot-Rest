@@ -3,7 +3,7 @@ package com.example.bciusermicroservice.service;
 import com.example.bciusermicroservice.dto.PhoneDTO;
 import com.example.bciusermicroservice.dto.SignUpRequest;
 import com.example.bciusermicroservice.dto.UserDTO;
-import com.example.bciusermicroservice.model.Phone;
+import com.example.bciusermicroservice.exception.SignUpException;
 import com.example.bciusermicroservice.model.User;
 import com.example.bciusermicroservice.repository.UserRepository;
 import com.example.bciusermicroservice.security.JwtUtil;
@@ -13,12 +13,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -45,9 +43,6 @@ class UserServiceImplTest {
         // Simula el comportamiento del repositorio
         Mockito.when(userRepository.findByEmail(Mockito.anyString())).thenReturn(Optional.empty());
 
-        // Simula el comportamiento del método de generación de token
-        Mockito.when(jwtUtil.generateToken(Mockito.any(User.class))).thenReturn("mocked-token");
-
         // Simula el comportamiento del método de codificación de contraseña
         Mockito.when(passwordEncoder.encode(Mockito.anyString())).thenReturn("encoded-password");
 
@@ -64,8 +59,6 @@ class UserServiceImplTest {
         // Verifica que el resultado sea el esperado
         assertEquals("Test User", result.getName());
         assertEquals("test@example.com", result.getEmail());
-        assertEquals("mocked-token", result.getToken());
-        // Puedes agregar más verificaciones según tus requisitos
     }
 
     @Test
@@ -78,32 +71,12 @@ class UserServiceImplTest {
         signUpRequest.setName("NombreUsuario");
         signUpRequest.setEmail("usuario@example.com");
         signUpRequest.setPassword("Contraseñ1a2");
-        signUpRequest.setPhones(Arrays.asList(new PhoneDTO(123456789l, 123, "US")));
 
-        // Verifica que se lance una excepción cuando el usuario ya existe
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        // Act & Assert
+        assertThrows(SignUpException.class, () -> {
             userService.signUp(signUpRequest);
         });
 
-        // Verifica el mensaje de la excepción
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getRawStatusCode());
-    }
-
-    @Test
-    void getUserInfoFromToken_UserNotFound() {
-        // Simula el comportamiento del repositorio cuando el usuario no se encuentra
-        Mockito.when(userRepository.getByToken(Mockito.anyString())).thenReturn(Optional.empty());
-
-        // Configura el token
-        String token = "test-token";
-
-        // Verifica que se lance una excepción cuando el usuario no se encuentra
-        UsernameNotFoundException exception = assertThrows(UsernameNotFoundException.class, () -> {
-            userService.getUserInfoFromToken(token);
-        });
-
-        // Verifica el mensaje de la excepción
-        assertEquals("Usuario no encontrado para el token proporcionado", exception.getMessage());
     }
 
 }

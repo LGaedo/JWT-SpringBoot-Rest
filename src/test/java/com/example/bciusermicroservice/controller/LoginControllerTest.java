@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +36,7 @@ class LoginControllerTest {
         String token = "validToken";
         UserDTO userDto = createValidUserDTO();
         Optional<UserDTO> userOptional = Optional.of(userDto);
-        when(userService.getUserInfoFromToken(token)).thenReturn(userOptional);
+        when(userService.getUserByUsername(token)).thenReturn(userOptional);
 
         // Act
         ResponseEntity<?> response = loginController.login(token);
@@ -47,26 +49,12 @@ class LoginControllerTest {
     void testLoginUserNotFound() {
         // Arrange
         String token = "invalidToken";
-        when(userService.getUserInfoFromToken(token)).thenReturn(Optional.empty());
+        when(userService.getUserByUsername(token)).thenReturn(Optional.empty());
 
-        // Act
-        ResponseEntity<?> response = loginController.login(token);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void testLoginException() {
-        // Arrange
-        String token = "tokenWithException";
-        when(userService.getUserInfoFromToken(token)).thenThrow(new RuntimeException("Simulación de una excepción"));
-
-        // Act
-        ResponseEntity<?> response = loginController.login(token);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        // Act & Assert
+        assertThrows(UsernameNotFoundException.class, () -> {
+            loginController.login(token);
+        });
     }
 
     private UserDTO createValidUserDTO() {

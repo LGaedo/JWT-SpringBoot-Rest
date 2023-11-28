@@ -16,7 +16,7 @@ public class UserTest {
         user.setId(1L);
         user.setCreated(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
-        user.setToken("exampleToken");
+//        user.setToken("exampleToken");
         user.setActive(true);
         user.setName("John Doe");
         user.setEmail("john@example.com");
@@ -37,7 +37,6 @@ public class UserTest {
         assertEquals(1L, user.getId());
         assertNotNull(user.getCreated());
         assertNotNull(user.getLastLogin());
-        assertEquals("exampleToken", user.getToken());
         assertTrue(user.isActive());
         assertEquals("John Doe", user.getName());
         assertEquals("john@example.com", user.getEmail());

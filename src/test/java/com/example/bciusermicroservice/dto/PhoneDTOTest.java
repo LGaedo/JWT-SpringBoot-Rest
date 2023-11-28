@@ -1,8 +1,9 @@
 package com.example.bciusermicroservice.dto;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
-import com.example.bciusermicroservice.dto.PhoneDTO;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class PhoneDTOTest {
 
@@ -28,9 +29,9 @@ public class PhoneDTOTest {
         PhoneDTO phoneDTO = new PhoneDTO();
 
         // Assert (default values)
-        assertEquals(null, phoneDTO.getNumber());
+        assertNull(phoneDTO.getNumber());
         assertEquals(0, phoneDTO.getCityCode());
-        assertEquals(null, phoneDTO.getCountrycode());
+        assertNull(phoneDTO.getCountrycode());
     }
 }
 
