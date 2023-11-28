@@ -1,6 +1,8 @@
 package com.example.bciusermicroservice.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -8,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserDTO {
     private Long id;
     private LocalDateTime created;

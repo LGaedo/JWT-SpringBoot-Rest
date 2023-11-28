@@ -1,14 +1,14 @@
 package com.example.bciusermicroservice.service;
 
-import com.example.bciusermicroservice.util.ValidationUtils;
 import com.example.bciusermicroservice.dto.PhoneDTO;
 import com.example.bciusermicroservice.dto.SignUpRequest;
 import com.example.bciusermicroservice.dto.UserDTO;
-import com.example.bciusermicroservice.model.ErrorResponse;
+import com.example.bciusermicroservice.exception.SignUpException;
 import com.example.bciusermicroservice.model.Phone;
 import com.example.bciusermicroservice.model.User;
 import com.example.bciusermicroservice.repository.UserRepository;
 import com.example.bciusermicroservice.security.JwtUtil;
+import com.example.bciusermicroservice.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +40,7 @@ public class UserServiceImpl implements UserService {
         validatePassword(signUpRequest.getPassword());
 
         userRepository.findByEmail(signUpRequest.getEmail())
-                .ifPresent(existingUser -> {
-                    ErrorResponse.ErrorDetail errorDetail = new ErrorResponse.ErrorDetail(
-                            Instant.now(),
-                            HttpStatus.BAD_REQUEST.value(),
-                            "User already exists"
-                    );
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorDetail.toString());
-                });
+                .ifPresent(existingUser -> {throw new SignUpException("User already exists");});
 
         User user = createUserFromRequest(signUpRequest);
         userRepository.save(user);
@@ -63,7 +55,6 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         user.setCreated(LocalDateTime.now());
         user.setLastLogin(LocalDateTime.now());
-        user.setToken(jwtUtil.generateToken(user));
         user.setActive(true);
 
         // Lógica para los teléfonos
@@ -87,23 +78,13 @@ public class UserServiceImpl implements UserService {
 
     private void validateEmail(String email) {
         if (!ValidationUtils.isValidEmailFormat(email)) {
-            ErrorResponse.ErrorDetail errorDetail = new ErrorResponse.ErrorDetail(
-                    Instant.now(),
-                    HttpStatus.BAD_REQUEST.value(),
-                    "Invalid email format"
-            );
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorDetail.toString());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email format");
         }
     }
 
     private void validatePassword(String password) {
         if (!ValidationUtils.isValidPasswordFormat(password)) {
-            ErrorResponse.ErrorDetail errorDetail = new ErrorResponse.ErrorDetail(
-                    Instant.now(),
-                    HttpStatus.BAD_REQUEST.value(),
-                    "Invalid password format"
-            );
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorDetail.toString());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid password format");
         }
     }
 
@@ -116,7 +97,7 @@ public class UserServiceImpl implements UserService {
         userDto.setId(user.getId());
         userDto.setCreated(user.getCreated());
         userDto.setLastLogin(user.getLastLogin());
-        userDto.setToken(user.getToken());
+        userDto.setToken(jwtUtil.generateToken(user.getUsername()));
         userDto.setActive(user.isActive());
         userDto.setName(user.getName());
         userDto.setEmail(user.getEmail());
@@ -126,28 +107,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Optional<UserDTO> getUserInfoFromToken(String token) {
-        // Recuperar el usuario desde la base de datos usando el nombre de usuario
-        Optional<User> optionalUser = userRepository.getByToken(token);
-        User user = optionalUser.orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado para el token proporcionado"));
+    public Optional<UserDTO> getUserByUsername(String token) {
 
-        if (user == null) {
-            // Manejar el caso en el que el usuario no se encuentre en la base de datos
-            throw new UsernameNotFoundException("Usuario no encontrado para el token proporcionado");
+        User userTmp = new User();
+        String username = jwtUtil.extractUsername(token);
+
+        if(jwtUtil.validateJwtToken(token, username)) {
+            userTmp = userRepository.getByEmail(username);
         }
 
-        //convert to dto
-        UserDTO userDTO = convertToDto(user);
+        Optional<User> optionalUser = Optional.ofNullable(userTmp);
 
+        return optionalUser.map(user -> {
+            UserDTO userDTO = convertToDto(user);
 
-        // Actualizar el token (si es necesario) antes de devolver la información del usuario
-        String updatedToken = jwtUtil.generateToken(user);
-        user.setToken(updatedToken);
-
-        // Guardar los cambios en el usuario (actualizar el token)
-        userRepository.save(user);
-
-        return Optional.ofNullable(userDTO);
+            return Optional.of(userDTO);
+        }).orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado para el token proporcionado"));
     }
 
     private UserDTO convertToDto(User user) {
@@ -156,11 +131,11 @@ public class UserServiceImpl implements UserService {
         userDto.setId(user.getId());
         userDto.setCreated(user.getCreated());
         userDto.setLastLogin(user.getLastLogin());
-        userDto.setToken(user.getToken());
+        userDto.setToken(jwtUtil.generateToken(user.getUsername()));
         userDto.setActive(user.isActive());
         userDto.setName(user.getName());
         userDto.setEmail(user.getEmail());
-        userDto.setPassword(user.getPassword());  // Asegúrate de que estás manejando correctamente las contraseñas en tu aplicación (no deberías devolver la contraseña)
+        userDto.setPassword(user.getPassword());
 
         // Mapeo de phones
         List<PhoneDTO> phoneDtos = user.getPhones().stream()

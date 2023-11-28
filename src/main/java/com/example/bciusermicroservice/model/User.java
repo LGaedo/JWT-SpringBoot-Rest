@@ -20,7 +20,6 @@ public class User implements UserDetails{
     private Long id;
     private LocalDateTime created;
     private LocalDateTime lastLogin;
-    private String token;
     private boolean isActive;
     private String name;
     private String email;
@@ -37,7 +36,7 @@ public class User implements UserDetails{
 
     @Override
     public String getUsername() {
-        return null;
+        return this.email;
     }
 
     @Override

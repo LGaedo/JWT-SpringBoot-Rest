@@ -1,5 +1,6 @@
 package com.example.bciusermicroservice.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,22 +19,28 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
     }
 
-    public String extractUsername(String token) {
-        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody().getSubject();
+    public Boolean validateJwtToken(String token, String usrname) {
+        String username = extractUsername(token);
+        Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        Boolean isTokenExpired = claims.getExpiration().before(new Date());
+        return (username.equals(usrname) && !isTokenExpired);
     }
-
+    public String extractUsername(String token) {
+        final Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        return claims.getSubject();
+    }
     @PostConstruct
     private void init() {
         if (secret == null || secret.isEmpty()) {
